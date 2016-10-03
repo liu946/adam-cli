@@ -105,6 +105,36 @@ module.exports = function (conf) {
                     return [conf, answers];
                 });
         })
+        // 准备模板附加问题
+        .then(function (ret) {
+            var conf = ret[0];
+            var answers = ret[1];
+            var extraConfigPath = path.join(conf.env.ADAM_TEMPLATES_DIR, answers.template, '.adam.js');
+            return fse.ensureFileAsync(extraConfigPath)
+                // 读模板配置
+                .then(function () {
+                    var ret = require(extraConfigPath);
+                    return ret;
+                })
+                // 询问
+                .then(function (extraConfig) {
+                    if (extraConfig.extraQuiz) {
+                        var quiz = extraConfig.extraQuiz;
+                        Object.keys(quiz).map(function(key) {
+                            return quiz[key].message = quiz[key].message ? quiz[key].message : quiz[key].name;
+                        });
+                        return inquirer.prompt(extraConfig.extraQuiz);
+                    }
+                })
+                // 增加answer
+                .then(function (extraAnswer) {
+                    ret[1] = Object.assign(answers, extraAnswer);
+                    return ret;
+                })
+                .catch(function (e) {
+                    return ret;
+                });
+        })
         // 如果输入的 projectName 与 当前目录名不一致，则新建对应文件夹
         .then(function (ret) {
             //var conf = ret[0];

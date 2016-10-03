@@ -78,6 +78,17 @@ module.exports = function (conf, answers) {
             var dotGit = path.join(tmpPath, '.git');
             return fse.removeAsync(dotGit);
         })
+        // 删除其中的 .adam.js 模板配置文件
+        .then(function () {
+            var adamJs = path.join(tmpPath, '.adam.js');
+            return fse.ensureFileAsync(adamJs)
+                .then(function () {
+                    return fse.removeAsync(adamJs);
+                })
+                .catch(function () {
+                    return true;
+                });
+        })
         // 遍历模板文件，做预操作
         .then(function () {
             // 取到目录下所有的文件
@@ -116,7 +127,7 @@ module.exports = function (conf, answers) {
                         return fse.readFileAsync(file, 'utf8')
                             .then(function (doc) {
                                 for (var p in answers) {
-                                    var regex = new RegExp('{{\\s*' + p + '\\s*}}', 'g');
+                                    var regex = new RegExp('({%|{{)\\s*' + p + '\\s*(}}|%})', 'g');
                                     doc = doc.replace(regex, answers[p]);
                                 }
 
